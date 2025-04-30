@@ -162,7 +162,56 @@
       },
     });
 
-    
+    // Función para manejar el carrito dinámico
+    const initShoppingCart = function () {
+      const cartContent = $('.shopping-cart-content');
+
+      // Captura todos los botones "Add to Cart"
+      $('.add-to-cart').on('click', function () {
+        const button = $(this);
+        const title = button.data('title');
+        const price = button.data('price');
+        const image = button.data('image');
+
+        // Crea un nuevo elemento para el producto
+        const cartItem = $(`
+          <div class="mini-cart-item d-flex border-bottom pb-3">
+            <div class="col-lg-2 col-md-3 col-sm-2 me-4">
+              <a href="#" title="product-image">
+                <img src="${image}" class="img-fluid" alt="${title}">
+              </a>
+            </div>
+            <div class="col-lg-9 col-md-8 col-sm-8">
+              <div class="product-header d-flex justify-content-between align-items-center mb-3">
+                <h4 class="product-title fs-6 me-5">${title}</h4>
+                <a href="#" class="remove" aria-label="Remove this item">
+                  <svg class="close">
+                    <use xlink:href="#close"></use>
+                  </svg>
+                </a>
+              </div>
+              <div class="quantity-price d-flex justify-content-between align-items-center">
+                <div class="price-code">
+                  <span class="product-price fs-6">${price}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `);
+
+        // Añade el producto al carrito
+        cartContent.append(cartItem);
+
+        // Opción para eliminar el producto del carrito
+        cartItem.find('.remove').on('click', function (e) {
+          e.preventDefault();
+          cartItem.remove();
+        });
+      });
+    };
+
+    // Inicializa la funcionalidad del carrito
+    initShoppingCart();
 
   }); // End of a document
 
