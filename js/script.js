@@ -165,17 +165,29 @@
     // Función para manejar el carrito dinámico
     const initShoppingCart = function () {
       const cartContent = $('.shopping-cart-content');
+      const totalContainer = $('<div class="cart-total mt-3"><strong>Total:</strong> <span class="total-price">$0</span></div><button class="btn btn-primary w-100 mt-3 pay-button">Pagar</button>');
+      cartContent.after(totalContainer);
+
+      const updateTotal = function () {
+        let total = 0;
+        cartContent.find('.mini-cart-item').each(function () {
+          const quantity = parseInt($(this).find('.quantity-input').val());
+          const price = parseFloat($(this).find('.product-price').data('price'));
+          total += quantity * price;
+        });
+        totalContainer.find('.total-price').text(`$${total.toFixed(2)}`);
+      };
 
       // Captura todos los botones "Add to Cart"
       $('.add-to-cart').on('click', function () {
         const button = $(this);
         const title = button.data('title');
-        const price = button.data('price');
+        const price = parseFloat(button.data('price').replace('$', ''));
         const image = button.data('image');
 
         // Crea un nuevo elemento para el producto
         const cartItem = $(`
-          <div class="mini-cart-item d-flex border-bottom pb-3">
+          <div class="mini-cart-item d-flex border-bottom pb-3 mb-4">
             <div class="col-lg-2 col-md-3 col-sm-2 me-4">
               <a href="#" title="product-image">
                 <img src="${image}" class="img-fluid" alt="${title}">
@@ -192,7 +204,12 @@
               </div>
               <div class="quantity-price d-flex justify-content-between align-items-center">
                 <div class="price-code">
-                  <span class="product-price fs-6">${price}</span>
+                  <span class="product-price fs-6" data-price="${price}">$${price.toFixed(2)}</span>
+                </div>
+                <div class="quantity d-flex align-items-center">
+                  <button class="quantity-minus btn btn-sm btn-outline-secondary">-</button>
+                  <input type="number" class="quantity-input form-control mx-2" value="1" min="1">
+                  <button class="quantity-plus btn btn-sm btn-outline-secondary">+</button>
                 </div>
               </div>
             </div>
@@ -202,11 +219,67 @@
         // Añade el producto al carrito
         cartContent.append(cartItem);
 
+        // Actualiza el total
+        updateTotal();
+
+        // Maneja el incremento y decremento de cantidad
+        cartItem.find('.quantity-minus').on('click', function () {
+          const input = $(this).siblings('.quantity-input');
+          const currentValue = parseInt(input.val());
+          if (currentValue > 1) {
+            input.val(currentValue - 1);
+            updateTotal();
+          }
+        });
+
+        cartItem.find('.quantity-plus').on('click', function () {
+          const input = $(this).siblings('.quantity-input');
+          const currentValue = parseInt(input.val());
+          input.val(currentValue + 1);
+          updateTotal();
+        });
+
+        cartItem.find('.quantity-input').on('change', function () {
+          const input = $(this);
+          if (parseInt(input.val()) < 1) {
+            input.val(1);
+          }
+          updateTotal();
+        });
+
         // Opción para eliminar el producto del carrito
         cartItem.find('.remove').on('click', function (e) {
           e.preventDefault();
           cartItem.remove();
+          updateTotal();
         });
+      });
+
+      // Acción del botón de pagar usando delegación de eventos
+      $(document).on('click', '.pay-button', function () {
+        const total = parseFloat($('.total-price').text().replace('$', ''));
+
+        // Enviar el total al backend
+        fetch('http://localhost:3000/api/create-order', { // Cambia la URL al puerto correcto
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ total }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.approvalUrl) {
+              window.location.href = data.approvalUrl;
+            } else {
+              console.error('Error del backend:', data);
+              alert('Error al crear el pedido. Inténtalo de nuevo.');
+            }
+          })
+          .catch((error) => {
+            console.error('Error de red:', error);
+            alert('Hubo un error al procesar el pago.');
+          });
       });
     };
 
